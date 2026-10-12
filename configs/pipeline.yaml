@@ -1,0 +1,6 @@
+detector_weights: runs/detect/train/weights/best.pt
+recognizer_weights: runs/recognition/best.pt
+det_conf: 0.25
+det_imgsz: 640
+crop_padding: 0.05     # relative padding around detected boxes
+device: auto

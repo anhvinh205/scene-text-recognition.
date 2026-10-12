@@ -1,0 +1,11 @@
+services:
+  api:
+    build: .
+    ports: ["127.0.0.1:8000:8000"]
+    environment:
+      PIPELINE_CONFIG: configs/pipeline.yaml
+      MAX_UPLOAD_MB: "10"
+      SCENETEXT_API_KEY: ${SCENETEXT_API_KEY:?Set SCENETEXT_API_KEY before starting the API}
+    volumes:
+      - ./runs:/app/runs:ro      # trained weights (best.pt files)
+    restart: unless-stopped

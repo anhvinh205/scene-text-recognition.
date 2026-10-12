@@ -1,0 +1,28 @@
+data_dir: data/ocr_dataset
+seed: 0
+split: { val: 0.2, test: 0.1 }
+img_size: [100, 420]        # H, W
+model:
+  backbone: resnet34        # course uses resnet101/152; lighter default for laptops
+  hidden_size: 256
+  n_layers: 3
+  dropout: 0.2
+  rnn: lstm                 # lstm | gru
+  pretrained: true
+  freeze_backbone: false
+  backbone_lr_mult: 0.1     # backbone learns 10x slower than the RNN head
+train:
+  epochs: 100
+  batch_size: 64
+  lr: 5.0e-4
+  weight_decay: 1.0e-5
+  lr_step_ratio: 0.5        # StepLR at 50% of epochs, gamma 0.1
+  grad_clip: 5.0
+  amp: true
+  num_workers: 2
+  early_stopping_patience: 15
+  out_dir: runs/recognition
+tracking:
+  enabled: false
+  uri: sqlite:///mlflow.db
+  experiment_name: scene-text-recognition

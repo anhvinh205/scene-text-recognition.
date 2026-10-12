@@ -1,0 +1,7 @@
+raw_dir: data/SceneTrialTrain          # contains words.xml + image folders
+yolo_dir: data/yolo_data               # output for detection
+ocr_dir: data/ocr_dataset              # output for recognition (crops + labels.txt)
+seed: 0
+split: { train: 0.7, val: 0.2, test: 0.1 }   # split by SOURCE IMAGE (no leakage)
+min_crop_size: 10
+brightness_range: [35, 220]            # drop almost-black / almost-white crops

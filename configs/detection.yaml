@@ -1,0 +1,14 @@
+model: yolo26m.pt
+data: data/yolo_data/data.yaml
+epochs: 100
+imgsz: 640
+patience: 20
+batch: 16
+cache: true
+seed: 0
+project: runs/detect
+name: train
+tracking:
+  enabled: false
+  uri: sqlite:///mlflow.db
+  experiment_name: scene-text-detection

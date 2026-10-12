@@ -1,0 +1,9 @@
+.git
+data
+datasets
+runs
+tests
+docs
+*.zip
+__pycache__
+.venv
