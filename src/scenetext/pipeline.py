@@ -11,7 +11,7 @@ from PIL import Image, ImageDraw
 
 from scenetext.data.transforms import build_transforms
 from scenetext.recognition.checkpoint import load_recognizer
-from scenetext.recognition.decode import greedy_decode
+from scenetext.recognition.decode import WordLexicon, beam_search_decode, greedy_decode
 from scenetext.utils import resolve_device
 
 ImageLike = str | Path | Image.Image | np.ndarray
@@ -66,6 +66,10 @@ class OCRPipeline:
         det_conf: float = 0.25,
         det_imgsz: int = 640,
         crop_padding: float = 0.05,
+        decode_mode: str = "greedy",
+        beam_width: int = 10,
+        lexicon: WordLexicon | list[str] | str | Path | None = None,
+        lm_weight: float = 0.5,
     ):
         from ultralytics import YOLO
 
@@ -77,6 +81,17 @@ class OCRPipeline:
         self.transform = build_transforms(self.img_size, train=False)
         self.det_conf, self.det_imgsz = det_conf, det_imgsz
         self.crop_padding = crop_padding
+        if decode_mode not in ("greedy", "beam"):
+            raise ValueError(f"decode_mode must be 'greedy' or 'beam', got {decode_mode!r}")
+        self.decode_mode = decode_mode
+        self.beam_width = beam_width
+        if isinstance(lexicon, str | Path):
+            self.lexicon = WordLexicon.from_file(lexicon)
+        elif lexicon is not None and not isinstance(lexicon, WordLexicon):
+            self.lexicon = WordLexicon(lexicon)
+        else:
+            self.lexicon = lexicon
+        self.lm_weight = lm_weight
 
     @classmethod
     def from_config(cls, cfg: dict) -> OCRPipeline:
@@ -87,6 +102,10 @@ class OCRPipeline:
             det_conf=cfg.get("det_conf", 0.25),
             det_imgsz=cfg.get("det_imgsz", 640),
             crop_padding=cfg.get("crop_padding", 0.05),
+            decode_mode=cfg.get("decode_mode", "greedy"),
+            beam_width=cfg.get("beam_width", 10),
+            lexicon=cfg.get("lexicon_path") or cfg.get("lexicon"),
+            lm_weight=cfg.get("lm_weight", 0.5),
         )
 
     def detect(self, img: Image.Image) -> list[tuple[list[float], float]]:
@@ -115,7 +134,18 @@ class OCRPipeline:
                 self.device
             )
             log_probs = self.recognizer(batch).float().cpu().numpy()
-            out.extend(greedy_decode(log_probs, self.vocab))
+            if self.decode_mode == "beam":
+                out.extend(
+                    beam_search_decode(
+                        log_probs,
+                        self.vocab,
+                        beam_width=self.beam_width,
+                        lexicon=self.lexicon,
+                        lm_weight=self.lm_weight,
+                    )
+                )
+            else:
+                out.extend(greedy_decode(log_probs, self.vocab))
         return out
 
     def predict(

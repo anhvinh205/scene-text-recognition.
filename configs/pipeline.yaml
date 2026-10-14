@@ -3,4 +3,8 @@ recognizer_weights: runs/recognition/best.pt
 det_conf: 0.25
 det_imgsz: 640
 crop_padding: 0.05     # relative padding around detected boxes
+decode_mode: greedy     # greedy | beam
+beam_width: 10          # number of hypotheses for beam search
+lexicon_path: null      # optional path to a dictionary text file for language scoring
+lm_weight: 0.5          # weight of dictionary score during beam search re-ranking
 device: auto

@@ -108,8 +108,16 @@ def _train(cfg: dict, device: str, tracker) -> dict:
         model.parameter_groups(tc["lr"], mc.get("backbone_lr_mult", 0.1)),
         weight_decay=tc["weight_decay"],
     )
-    step = max(1, int(tc["epochs"] * tc["lr_step_ratio"]))
-    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=step, gamma=0.1)
+    scheduler = torch.optim.lr_scheduler.OneCycleLR(
+        optimizer,
+        max_lr=[tc["lr"], tc["lr"] * mc.get("backbone_lr_mult", 0.1)]
+        if any(n.startswith("backbone.") for n, p in model.named_parameters() if p.requires_grad)
+        else [tc["lr"]],
+        epochs=tc["epochs"],
+        steps_per_epoch=len(loaders["train"]),
+        pct_start=tc.get("warmup_pct", 0.1),
+        anneal_strategy="cos",
+    )
     use_amp = tc["amp"] and device.startswith("cuda")
     scaler = torch.amp.GradScaler(enabled=use_amp)
 
@@ -137,7 +145,7 @@ def _train(cfg: dict, device: str, tracker) -> dict:
             scaler.step(optimizer)
             scaler.update()
             losses.append(loss.item())
-        scheduler.step()
+            scheduler.step()
 
         val = evaluate(model, loaders["val"], criterion, vocab, device)
         row = {

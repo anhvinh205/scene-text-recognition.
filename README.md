@@ -241,6 +241,13 @@ If `find` returned another path, replace the example path above. Evaluate the re
 !scenetext eval-rec --device cuda
 ```
 
+Beam search can be selected for evaluation; use `--beam-width` to control the number of
+hypotheses:
+
+```python
+!scenetext eval-rec --device cuda --decode beam --beam-width 10
+```
+
 For end-to-end evaluation, create a Colab-specific pipeline config with the actual detector path:
 
 ```python

@@ -69,7 +69,13 @@ def _eval_rec(args: argparse.Namespace) -> None:
     model, vocab, _ = load_recognizer(args.weights, device)
     loaders, _ = make_loaders(cfg, vocab)
     res = evaluate(
-        model, loaders[args.split], nn.CTCLoss(blank=Vocab.BLANK, zero_infinity=True), vocab, device
+        model,
+        loaders[args.split],
+        nn.CTCLoss(blank=Vocab.BLANK, zero_infinity=True),
+        vocab,
+        device,
+        decode_mode=args.decode,
+        beam_width=args.beam_width,
     )
     print(json.dumps({k: res[k] for k in ("loss", "accuracy", "cer")}, indent=2))
 
@@ -139,6 +145,8 @@ def build_parser() -> argparse.ArgumentParser:
     sp.add_argument("--weights", default="runs/recognition/best.pt")
     sp.add_argument("--split", default="test", choices=["val", "test"])
     sp.add_argument("--device", default="auto")
+    sp.add_argument("--decode", default="greedy", choices=["greedy", "beam"])
+    sp.add_argument("--beam-width", type=int, default=10)
 
     sp = add("eval-e2e", _eval_e2e, "End-to-end P/R/F1 of detector + recogniser")
     sp.add_argument("--config", default="configs/pipeline.yaml")

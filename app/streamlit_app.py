@@ -22,6 +22,13 @@ def get_pipeline() -> OCRPipeline:
 pipe = get_pipeline()
 pipe.det_conf = st.sidebar.slider("Detection confidence", 0.05, 0.95, pipe.det_conf, 0.05)
 min_rec = st.sidebar.slider("Min. recognition confidence", 0.0, 1.0, 0.0, 0.05)
+pipe.decode_mode = st.sidebar.selectbox(
+    "Decoding method",
+    ["greedy", "beam"],
+    index=0 if getattr(pipe, "decode_mode", "greedy") == "greedy" else 1,
+)
+if pipe.decode_mode == "beam":
+    pipe.beam_width = st.sidebar.slider("Beam width", 2, 25, getattr(pipe, "beam_width", 10), 1)
 
 upload = st.file_uploader("Upload an image", type=["jpg", "jpeg", "png"], max_upload_size=10)
 if upload:

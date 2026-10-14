@@ -1,8 +1,11 @@
 import json
 
+from PIL import Image
+
 from scenetext.data.crops import build_recognition_dataset, read_labels
 from scenetext.data.icdar import WordBox, is_valid_label, parse_icdar_xml
 from scenetext.data.splits import split_items
+from scenetext.data.transforms import build_transforms
 from scenetext.data.yolo_format import build_yolo_dataset, to_yolo_line
 
 
@@ -65,3 +68,32 @@ def test_build_recognition_dataset(icdar_dir, tmp_path):
     rows = read_labels(out)
     assert sorted(r[1] for r in rows) == ["a12", "hello", "world"]
     assert all(r[2] for r in rows)
+
+
+def test_build_transforms():
+    img = Image.new("RGB", (200, 100), color=(128, 128, 128))
+
+    t_val = build_transforms((100, 420), train=False)
+    tensor_val = t_val(img)
+    assert tensor_val.shape == (1, 100, 420)
+
+    t_train = build_transforms((100, 420), train=True)
+    tensor_train = t_train(img)
+    assert tensor_train.shape == (1, 100, 420)
+
+
+def test_resize_with_pad():
+    from scenetext.data.transforms import ResizeWithPad
+
+    resizer = ResizeWithPad((100, 420))
+    short_img = Image.new("RGB", (50, 50), color=(255, 0, 0))
+    padded = resizer(short_img)
+    assert padded.size == (420, 100)
+
+    long_img = Image.new("RGB", (1000, 100), color=(0, 255, 0))
+    padded_long = resizer(long_img)
+    assert padded_long.size == (420, 100)
+    assert padded_long.getpixel((0, 0)) == (128, 128, 128)
+    assert padded_long.getpixel((0, 29)) == (0, 255, 0)
+    assert padded_long.getpixel((419, 70)) == (0, 255, 0)
+    assert padded_long.getpixel((0, 71)) == (128, 128, 128)
