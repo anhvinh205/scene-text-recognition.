@@ -70,7 +70,7 @@ def log_params(tracker: Any, params: dict[str, Any], prefix: str = "") -> None:
             elif value is not None:
                 serialized = (
                     json.dumps(value, sort_keys=True)
-                    if isinstance(value, (list, tuple, bool))
+                    if isinstance(value, list | tuple | bool)
                     else str(value)
                 )
                 flattened[name] = serialized[:500]

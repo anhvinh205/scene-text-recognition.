@@ -36,9 +36,7 @@ def greedy_decode(log_probs, vocab: Vocab) -> list[tuple[str, float]]:
     if arr.ndim != 3:
         raise ValueError(f"expected (T, B, C), got {arr.shape}")
     if arr.shape[2] != vocab.num_classes:
-        raise ValueError(
-            f"expected {vocab.num_classes} classes for vocabulary, got {arr.shape[2]}"
-        )
+        raise ValueError(f"expected {vocab.num_classes} classes for vocabulary, got {arr.shape[2]}")
     # normalise to probabilities in a numerically stable way
     arr = arr - arr.max(axis=2, keepdims=True)
     probs = np.exp(arr)
@@ -59,6 +57,7 @@ def greedy_decode(log_probs, vocab: Vocab) -> list[tuple[str, float]]:
 # ---------------------------------------------------------------------------
 # Lexicon / Language Model
 # ---------------------------------------------------------------------------
+
 
 class WordLexicon:
     """Dictionary and language model lexicon for beam search scoring and re-ranking."""
@@ -104,6 +103,7 @@ class WordLexicon:
 # CTC prefix beam search
 # ---------------------------------------------------------------------------
 
+
 def _beam_search_single(
     log_probs_t: np.ndarray,
     beam_width: int,
@@ -129,20 +129,13 @@ def _beam_search_single(
     #   p_nb = prob of all alignments ending in non-blank
     # Total prob = log_sum_exp(p_b, p_nb)
 
-    beams: dict[tuple[int, ...], list[float]] = defaultdict(
-        lambda: [NEG_INF, NEG_INF]
-    )
+    beams: dict[tuple[int, ...], list[float]] = defaultdict(lambda: [NEG_INF, NEG_INF])
     beams[()][0] = 0.0  # empty prefix, ends in blank
 
     for t in range(T):
-        new_beams: dict[tuple[int, ...], list[float]] = defaultdict(
-            lambda: [NEG_INF, NEG_INF]
-        )
+        new_beams: dict[tuple[int, ...], list[float]] = defaultdict(lambda: [NEG_INF, NEG_INF])
         # Prune: keep only top-k by total prob
-        scored = [
-            (prefix, _log_sum_exp(pb, pnb))
-            for prefix, (pb, pnb) in beams.items()
-        ]
+        scored = [(prefix, _log_sum_exp(pb, pnb)) for prefix, (pb, pnb) in beams.items()]
         scored.sort(key=lambda x: x[1], reverse=True)
         kept = scored[:beam_width]
 
@@ -167,14 +160,10 @@ def _beam_search_single(
                 if prefix and c == prefix[-1]:
                     # same char as last in prefix:
                     # can extend only via a blank step (p_b contributes)
-                    new_beams[new_prefix][1] = _log_sum_exp(
-                        new_beams[new_prefix][1], p_b + lp[c]
-                    )
+                    new_beams[new_prefix][1] = _log_sum_exp(new_beams[new_prefix][1], p_b + lp[c])
                     # also allow continuing the *current* prefix
                     # (repeated same char, no collapse)
-                    new_beams[prefix][1] = _log_sum_exp(
-                        new_beams[prefix][1], p_nb + lp[c]
-                    )
+                    new_beams[prefix][1] = _log_sum_exp(new_beams[prefix][1], p_nb + lp[c])
                 else:
                     new_beams[new_prefix][1] = _log_sum_exp(
                         new_beams[new_prefix][1],
@@ -184,10 +173,7 @@ def _beam_search_single(
         beams = new_beams
 
     # Final ranking
-    results = [
-        (prefix, _log_sum_exp(pb, pnb))
-        for prefix, (pb, pnb) in beams.items()
-    ]
+    results = [(prefix, _log_sum_exp(pb, pnb)) for prefix, (pb, pnb) in beams.items()]
     results.sort(key=lambda x: x[1], reverse=True)
     return results[:beam_width]
 
@@ -234,9 +220,7 @@ def beam_search_decode(
     if arr.ndim != 3:
         raise ValueError(f"expected (T, B, C), got {arr.shape}")
     if arr.shape[2] != vocab.num_classes:
-        raise ValueError(
-            f"expected {vocab.num_classes} classes for vocabulary, got {arr.shape[2]}"
-        )
+        raise ValueError(f"expected {vocab.num_classes} classes for vocabulary, got {arr.shape[2]}")
     if isinstance(beam_width, bool) or not isinstance(beam_width, int) or beam_width < 1:
         raise ValueError(f"beam_width must be a positive integer, got {beam_width!r}")
     if not math.isfinite(lm_weight) or lm_weight < 0:
